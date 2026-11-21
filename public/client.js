@@ -13,9 +13,9 @@
   const readyButton = $('#ready-button');
   const socket = typeof window.io === 'function' ? window.io() : null;
   const keys = new Set();
-  const keyCodes = ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyF', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
+  const keyCodes = ['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown', 'Enter', 'ShiftLeft', 'ShiftRight'];
 
-  let mode = 'arena';
+  let mode = 'race';
   let playMode = 'local';
   let localState = null;
   let onlineState = null;
@@ -25,10 +25,10 @@
   let lastFrame = 0;
   let lastInput = '';
 
-  const GAME_NAMES = { arena: 'Choque de Chispas', pong: 'Ping-pong relámpago' };
+  const GAME_NAMES = { race: 'Carrera de plataformas', pong: 'Ping-pong relámpago' };
   const localInputs = [
-    { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'KeyF' },
-    { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' }
+    { up: 'KeyW', down: 'KeyS', jump: 'KeyW', sprint: 'ShiftLeft' },
+    { up: 'ArrowUp', down: 'ArrowDown', jump: 'ArrowUp', sprint: 'Enter' }
   ];
 
   function setOverlay(title, copy, button, eyebrow) {
@@ -87,7 +87,7 @@
     $('#player-label').innerHTML = selectedMode === 'online' ? '<span id="player-slot">BUSCANDO PLAZA</span> <i>VS</i> RIVAL' : 'JUGADOR 1 <i>VS</i> JUGADOR 2';
     $('#game-instructions').textContent = game === 'pong'
       ? 'Devuelve la pelota y llega a 5 puntos.'
-      : 'Salta con ↑ / W y golpea con Enter / F. Cada jugador tiene 3 vidas.';
+      : 'Salta con W / ↑. Mantén Shift / Enter para acelerar; esquiva troncos y rocas.';
     menu.hidden = true;
     gameScreen.hidden = false;
     if (selectedMode === 'online') {
@@ -120,7 +120,7 @@
       left: keys.has(controls.left),
       right: keys.has(controls.right),
       jump: keys.has(controls.jump),
-      attack: keys.has(controls.attack)
+      sprint: keys.has(controls.sprint)
     };
   }
 
@@ -185,66 +185,191 @@
     ctx.textAlign = 'right'; ctx.fillStyle = '#f7bd4b'; ctx.fillText('JUGADOR 2', 758, 425);
   }
 
-  function drawFighter(fighter, side) {
+  function drawRunner(runner, side, groundY, animationTime) {
+    const x = 164;
+    const footY = groundY - (DuelGame.FLOOR - runner.y);
+    const bob = runner.grounded ? Math.abs(Math.sin(animationTime * 0.014)) * 2 : 0;
+    const bodyColor = side === 0 ? '#f07849' : '#48a6bb';
+    const trimColor = side === 0 ? '#ffc86c' : '#a9ead8';
+    const headY = footY - 43 - bob;
+    const stride = runner.grounded ? Math.sin(animationTime * 0.018) * 9 : 5;
+
     ctx.save();
-    ctx.translate(fighter.x, fighter.y);
-    const color = side === 0 ? '#f1874f' : '#58afc3';
-    const glow = side === 0 ? '#ffc06f' : '#8de8ee';
-    if (fighter.invulnerable > 0 && Math.floor(fighter.invulnerable * 16) % 2 === 0) ctx.globalAlpha = .45;
-    ctx.fillStyle = 'rgba(0,0,0,.24)';
-    ctx.beginPath(); ctx.ellipse(0, 1, 29, 6, 0, 0, Math.PI * 2); ctx.fill();
-    if (fighter.swing > 0) {
-      ctx.globalAlpha = .7;
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.ellipse(fighter.facing * 48, -48, 34, 18, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = fighter.invulnerable > 0 ? .45 : 1;
-    }
-    ctx.fillStyle = color;
-    ctx.strokeStyle = '#f7e7c7';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.roundRect(-22, -59, 44, 54, 13); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.roundRect(-19, -88, 38, 35, 14); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#202738';
-    roundRect(-12, -76, 24, 11, 5, '#202738');
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(-6, -71, 2.3, 0, Math.PI * 2); ctx.arc(6, -71, 2.3, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = color; ctx.lineWidth = 9; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-14, -12); ctx.lineTo(-16, 0); ctx.moveTo(14, -12); ctx.lineTo(16, 0); ctx.stroke();
+    ctx.fillStyle = 'rgba(11,17,27,.24)';
+    ctx.beginPath(); ctx.ellipse(x, groundY + 2, 27, 6, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 7;
+    ctx.strokeStyle = '#31424c';
+    ctx.beginPath();
+    ctx.moveTo(x - 7, footY - 13 - bob); ctx.lineTo(x - 9 - stride, footY - bob);
+    ctx.moveTo(x + 7, footY - 13 - bob); ctx.lineTo(x + 9 + stride, footY - bob);
+    ctx.stroke();
+
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath(); ctx.roundRect(x - 16, footY - 38 - bob, 32, 29, 11); ctx.fill();
+    ctx.fillStyle = trimColor;
+    ctx.beginPath(); ctx.roundRect(x - 5, footY - 36 - bob, 10, 23, 4); ctx.fill();
+
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.moveTo(x - 14, headY + 1); ctx.lineTo(x - 12, headY - 14);
+    ctx.lineTo(x - 3, headY - 7); ctx.lineTo(x + 4, headY - 7);
+    ctx.lineTo(x + 13, headY - 14); ctx.lineTo(x + 15, headY + 1);
+    ctx.quadraticCurveTo(x + 16, headY + 17, x, headY + 17);
+    ctx.quadraticCurveTo(x - 16, headY + 17, x - 14, headY + 1);
+    ctx.fill();
+    ctx.fillStyle = '#222b37';
+    ctx.beginPath();
+    ctx.arc(x - 5, headY + 2, 1.8, 0, Math.PI * 2);
+    ctx.arc(x + 5, headY + 2, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = trimColor;
+    ctx.beginPath();
+    ctx.moveTo(x - 14, headY - 7);
+    ctx.quadraticCurveTo(x, headY - 17, x + 14, headY - 7);
+    ctx.lineTo(x + 11, headY - 12);
+    ctx.quadraticCurveTo(x, headY - 24, x - 11, headY - 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = trimColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x + 8, headY + 19); ctx.lineTo(x + 23, headY + 23); ctx.stroke();
     ctx.restore();
-    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillStyle = side === 0 ? '#ffc06f' : '#8de8ee';
-    ctx.font = '10px "DM Mono", monospace';
-    ctx.fillText(side === 0 ? 'NOVA' : 'BOLT', fighter.x, fighter.y - 101);
   }
 
-  function drawArena(state) {
-    drawBackground();
-    const glow = ctx.createLinearGradient(0, 310, 0, 450);
-    glow.addColorStop(0, 'rgba(248,183,76,.02)'); glow.addColorStop(1, 'rgba(248,183,76,.15)');
-    ctx.fillStyle = glow; ctx.fillRect(0, 310, 800, 140);
-    ctx.fillStyle = '#a06d42'; ctx.fillRect(0, 371, 800, 79);
-    ctx.fillStyle = '#f4b65d'; ctx.fillRect(0, 369, 800, 3);
-    drawScore(state.score);
-    state.fighters.forEach(drawFighter);
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  function drawRaceObstacle(obstacle, x, groundY) {
+    if (obstacle.type === 'rock') {
+      ctx.fillStyle = '#75806b';
+      ctx.beginPath();
+      ctx.moveTo(x - obstacle.width / 2, groundY);
+      ctx.lineTo(x - obstacle.width / 2 + 5, groundY - obstacle.height * .6);
+      ctx.lineTo(x - obstacle.width * .1, groundY - obstacle.height);
+      ctx.lineTo(x + obstacle.width * .35, groundY - obstacle.height * .75);
+      ctx.lineTo(x + obstacle.width / 2, groundY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.3)';
+      ctx.fillRect(x - 5, groundY - obstacle.height + 8, 9, 3);
+    } else {
+      roundRect(x - obstacle.width / 2, groundY - obstacle.height + 8, obstacle.width, obstacle.height - 8, 7, '#aa7047');
+      ctx.strokeStyle = '#e0a267';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - obstacle.width * .28, groundY - obstacle.height + 10);
+      ctx.lineTo(x - obstacle.width * .28, groundY - 3);
+      ctx.moveTo(x + obstacle.width * .28, groundY - obstacle.height + 10);
+      ctx.lineTo(x + obstacle.width * .28, groundY - 3);
+      ctx.stroke();
+    }
+  }
+
+  function drawRace(state, time) {
+    const laneGrounds = [205, 430];
+
     for (let side = 0; side < 2; side += 1) {
-      const x = side === 0 ? 35 : 585;
-      ctx.font = '9px "DM Mono", monospace';
-      ctx.fillStyle = side === 0 ? '#ffc06f' : '#8de8ee';
-      ctx.fillText(side === 0 ? 'NOVA · J1' : 'BOLT · J2', x, 88);
-      for (let heart = 0; heart < 3; heart += 1) {
-        ctx.fillStyle = heart < state.fighters[side].hp ? (side === 0 ? '#f1874f' : '#58afc3') : 'rgba(255,255,255,.15)';
-        roundRect(x + heart * 20, 107, 15, 7, 4, ctx.fillStyle);
+      const runner = state.runners[side];
+      const laneTop = side * 225;
+      const groundY = laneGrounds[side];
+      const palette = side === 0
+        ? { sky: '#b3d9d4', horizon: '#7fa79b', hill: '#578879', grass: '#8fae65', dirt: '#785d43' }
+        : { sky: '#f1d6a5', horizon: '#cba777', hill: '#ac8256', grass: '#c4a267', dirt: '#785b43' };
+
+      const sky = ctx.createLinearGradient(0, laneTop, 0, groundY);
+      sky.addColorStop(0, palette.sky);
+      sky.addColorStop(1, '#e8e1c2');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, laneTop, 800, groundY - laneTop);
+
+      ctx.fillStyle = 'rgba(255,255,255,.72)';
+      for (let cloud = 0; cloud < 3; cloud += 1) {
+        const cloudX = (cloud * 291 + 72 - runner.distance * .12 % 920 + 920) % 920 - 55;
+        const cloudY = laneTop + 72 + cloud % 2 * 18;
+        ctx.beginPath();
+        ctx.ellipse(cloudX, cloudY, 27, 8, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloudX - 15, cloudY + 3, 15, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloudX + 16, cloudY + 4, 18, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const hillOffset = (runner.distance * .24) % 400;
+      ctx.fillStyle = palette.horizon;
+      ctx.beginPath(); ctx.moveTo(0, groundY);
+      for (let point = -1; point < 5; point += 1) {
+        const x = point * 200 - hillOffset;
+        ctx.quadraticCurveTo(x + 85, groundY - 104 - point % 2 * 19, x + 200, groundY);
+      }
+      ctx.closePath(); ctx.fill();
+
+      ctx.fillStyle = palette.hill; ctx.fillRect(0, groundY - 7, 800, 10);
+      ctx.fillStyle = palette.grass; ctx.fillRect(0, groundY + 3, 800, 4);
+      ctx.fillStyle = palette.dirt;
+      ctx.fillRect(0, groundY + 7, 800, laneTop + 225 - groundY - 7);
+      ctx.fillStyle = 'rgba(239,219,168,.36)';
+      const trackOffset = runner.distance % 84;
+      for (let mark = 0; mark < 11; mark += 1) ctx.fillRect(mark * 84 - trackOffset, groundY + 24, 27, 3);
+
+      for (const obstacle of DuelGame.RACE_OBSTACLES) {
+        const obstacleX = 164 + obstacle.distance - runner.distance;
+        if (obstacleX > 805 || obstacleX < -60) continue;
+        drawRaceObstacle(obstacle, obstacleX, groundY);
+        if (obstacleX > 190 && obstacleX < 380) {
+          ctx.fillStyle = side === 0 ? '#435f56' : '#715c44';
+          ctx.font = '9px monospace'; ctx.textAlign = 'left';
+          ctx.fillText('¡SALTA!', 228, groundY - obstacle.height - 10);
+        }
+      }
+
+      const finishX = 164 + DuelGame.RACE_FINISH - runner.distance;
+      if (finishX > 125 && finishX < 810) {
+        ctx.fillStyle = '#f2eee0'; ctx.fillRect(finishX, groundY - 103, 3, 103);
+        for (let row = 0; row < 4; row += 1) {
+          for (let col = 0; col < 4; col += 1) {
+            ctx.fillStyle = (row + col) % 2 ? '#f7f0dd' : '#364052';
+            ctx.fillRect(finishX + 3 + col * 10, groundY - 103 + row * 10, 10, 10);
+          }
+        }
+        ctx.fillStyle = '#f5f0e2'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+        ctx.fillText('META', finishX + 22, groundY - 112);
+      }
+
+      drawRunner(runner, side, groundY, time);
+
+      ctx.fillStyle = 'rgba(19,31,34,.76)';
+      ctx.beginPath(); ctx.roundRect(15, laneTop + 12, 151, 34, 8); ctx.fill();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff8e9'; ctx.font = 'bold 10px monospace';
+      ctx.fillText(side === 0 ? 'LUNA  ·  J1' : 'MILO  ·  J2', 25, laneTop + 29);
+      ctx.fillStyle = 'rgba(255,255,255,.3)';
+      ctx.beginPath(); ctx.roundRect(180, laneTop + 23, 99, 9, 5); ctx.fill();
+      ctx.fillStyle = side === 0 ? '#ffc86c' : '#8be1d0';
+      ctx.beginPath(); ctx.roundRect(180, laneTop + 23, 99 * runner.stamina / 100, 9, 5); ctx.fill();
+      ctx.font = '9px monospace'; ctx.fillStyle = '#fff8e9'; ctx.fillText('TURBO', 285, laneTop + 29);
+
+      const progress = Math.min(1, runner.distance / DuelGame.RACE_FINISH);
+      ctx.fillStyle = 'rgba(19,31,34,.64)';
+      ctx.beginPath(); ctx.roundRect(617, laneTop + 16, 166, 25, 7); ctx.fill();
+      ctx.fillStyle = '#fff8e9'; ctx.textAlign = 'right';
+      ctx.fillText(`${Math.floor(runner.distance)} / ${DuelGame.RACE_FINISH} m`, 774, laneTop + 28);
+      ctx.fillStyle = 'rgba(255,255,255,.3)';
+      ctx.beginPath(); ctx.roundRect(622, laneTop + 47, 157, 4, 3); ctx.fill();
+      ctx.fillStyle = side === 0 ? '#ffc86c' : '#8be1d0';
+      ctx.beginPath(); ctx.roundRect(622, laneTop + 47, 157 * progress, 4, 3); ctx.fill();
+
+      if (runner.stun > 0) {
+        ctx.fillStyle = '#fff2c2'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center';
+        ctx.fillText('¡TROPEZÓN!', 164, groundY - 102);
       }
     }
+
+    ctx.fillStyle = 'rgba(24,28,37,.9)';
+    ctx.fillRect(0, 223, 800, 4);
   }
 
-  function render() {
+  function render(time) {
     if (!gameScreen.hidden) {
       const state = playMode === 'online' ? onlineState : localState;
-      if (state) mode === 'pong' ? drawPong(state) : drawArena(state);
+      if (state) mode === 'pong' ? drawPong(state) : drawRace(state, time);
       else {
         drawBackground();
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(255,255,255,.45)';

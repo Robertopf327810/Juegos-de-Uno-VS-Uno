@@ -10,6 +10,16 @@
   const FLOOR = 370;
   const PADDLE_HEIGHT = 88;
   const WIN_SCORE = 5;
+  const RACE_FINISH = 2800;
+  const RACE_OBSTACLES = [
+    { distance: 340, type: 'rock', width: 40, height: 34 },
+    { distance: 700, type: 'log', width: 56, height: 50 },
+    { distance: 1060, type: 'rock', width: 46, height: 40 },
+    { distance: 1440, type: 'log', width: 66, height: 55 },
+    { distance: 1830, type: 'rock', width: 50, height: 44 },
+    { distance: 2220, type: 'log', width: 58, height: 48 },
+    { distance: 2580, type: 'rock', width: 44, height: 38 }
+  ];
 
   function create(mode) {
     if (mode === 'pong') {
@@ -21,13 +31,14 @@
       };
     }
     return {
-      mode: 'arena',
-      score: [0, 0],
-      fighters: [
-        { x: 150, y: FLOOR, vy: 0, hp: 3, facing: 1, grounded: true, cooldown: 0, swing: 0, hitThisSwing: false, invulnerable: 0 },
-        { x: 650, y: FLOOR, vy: 0, hp: 3, facing: -1, grounded: true, cooldown: 0, swing: 0, hitThisSwing: false, invulnerable: 0 }
-      ]
+      mode: 'race',
+      runners: [createRunner(), createRunner()],
+      winner: -1
     };
+  }
+
+  function createRunner() {
+    return { distance: 0, y: FLOOR, vy: 0, grounded: true, jumpHeld: false, stun: 0, stamina: 100, collisions: 0 };
   }
 
   function clamp(value, min, max) {
@@ -74,63 +85,67 @@
     return -1;
   }
 
-  function stepArena(state, inputs, dt) {
-    const fighters = state.fighters;
+  function stepRace(state, inputs, dt) {
+    const racers = state.runners;
+    let winner = -1;
+    let finishTime = Infinity;
+
     for (let side = 0; side < 2; side += 1) {
-      const fighter = fighters[side];
+      const racer = racers[side];
       const input = inputs[side] || {};
-      const direction = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-      if (direction) fighter.facing = direction;
-      if (Math.abs(fighters[1 - side].x - fighter.x) < 190) fighter.facing = fighters[1 - side].x > fighter.x ? 1 : -1;
-      fighter.x = clamp(fighter.x + direction * 265 * dt, 40, WIDTH - 40);
-
-      if (input.jump && fighter.grounded) {
-        fighter.vy = -640;
-        fighter.grounded = false;
+      if (input.jump && !racer.jumpHeld && racer.grounded && racer.stun === 0) {
+        racer.vy = -620;
+        racer.grounded = false;
       }
-      fighter.vy += 1700 * dt;
-      fighter.y += fighter.vy * dt;
-      if (fighter.y >= FLOOR) {
-        fighter.y = FLOOR;
-        fighter.vy = 0;
-        fighter.grounded = true;
+      racer.jumpHeld = !!input.jump;
+
+      racer.vy += 1680 * dt;
+      racer.y += racer.vy * dt;
+      if (racer.y >= FLOOR) {
+        racer.y = FLOOR;
+        racer.vy = 0;
+        racer.grounded = true;
       }
 
-      fighter.cooldown = Math.max(0, fighter.cooldown - dt);
-      fighter.swing = Math.max(0, fighter.swing - dt);
-      fighter.invulnerable = Math.max(0, fighter.invulnerable - dt);
-      if (input.attack && fighter.cooldown === 0) {
-        fighter.cooldown = 0.5;
-        fighter.swing = 0.16;
-        fighter.hitThisSwing = false;
+      const previousDistance = racer.distance;
+      const speed = racer.stun > 0 ? 48 : input.sprint && racer.stamina > 0 ? 240 : 164;
+      if (input.sprint && racer.stun === 0 && racer.stamina > 0) {
+        racer.stamina = Math.max(0, racer.stamina - 36 * dt);
+      } else {
+        racer.stamina = Math.min(100, racer.stamina + 22 * dt);
       }
-    }
 
-    for (let side = 0; side < 2; side += 1) {
-      const attacker = fighters[side];
-      const target = fighters[1 - side];
-      const inFront = (target.x - attacker.x) * attacker.facing > 0;
-      const close = Math.abs(target.x - attacker.x) < 110 && Math.abs(target.y - attacker.y) < 95;
-      if (attacker.swing > 0 && !attacker.hitThisSwing && inFront && close && target.invulnerable === 0) {
-        target.hp = Math.max(0, target.hp - 1);
-        target.vy = -210;
-        target.grounded = false;
-        target.x = clamp(target.x + attacker.facing * 26, 40, WIDTH - 40);
-        target.invulnerable = 0.7;
-        attacker.hitThisSwing = true;
-        if (target.hp === 0) {
-          state.score[side] += 1;
-          return side;
+      racer.distance += speed * dt;
+
+      const crossedObstacle = RACE_OBSTACLES.find((obstacle) =>
+          previousDistance < obstacle.distance && racer.distance >= obstacle.distance);
+      if (crossedObstacle && (racer.grounded || racer.y > FLOOR - crossedObstacle.height - 30)) {
+        racer.stun = 0.75;
+        racer.collisions += 1;
+      }
+
+      racer.stun = Math.max(0, racer.stun - dt);
+
+      if (racer.distance >= RACE_FINISH) {
+        const crossingTime = (RACE_FINISH - previousDistance) / (racer.distance - previousDistance);
+        if (crossingTime < finishTime) {
+          finishTime = crossingTime;
+          winner = side;
         }
       }
     }
-    return -1;
+
+    if (winner >= 0) state.winner = winner;
+    return winner;
   }
 
   function step(state, inputs, dt) {
     if (!Number.isFinite(dt) || dt <= 0) return -1;
-    return state.mode === 'pong' ? stepPong(state, inputs, Math.min(dt, 0.05)) : stepArena(state, inputs, Math.min(dt, 0.05));
+    const frameTime = Math.min(dt, 0.05);
+    if (state.mode === 'pong') return stepPong(state, inputs, frameTime);
+    if (state.mode === 'race') return stepRace(state, inputs, frameTime);
+    throw new Error(`Unknown game mode: ${state.mode}`);
   }
 
-  return { WIDTH, HEIGHT, FLOOR, WIN_SCORE, create, step };
+  return { WIDTH, HEIGHT, FLOOR, WIN_SCORE, RACE_FINISH, RACE_OBSTACLES, create, step };
 }));

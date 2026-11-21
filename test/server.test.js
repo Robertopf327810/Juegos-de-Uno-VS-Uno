@@ -17,7 +17,7 @@ async function connect(url) {
   return socket;
 }
 
-test('online rooms allow exactly two players per game', async (t) => {
+test('online race accepts exactly two players while the Pong room stays independent', async (t) => {
   const service = createService();
   await new Promise((resolve) => service.httpServer.listen(0, '127.0.0.1', resolve));
   const address = service.httpServer.address();
@@ -36,12 +36,12 @@ test('online rooms allow exactly two players per game', async (t) => {
   clients.push(first, second, third, pongPlayer);
 
   const firstJoined = once(first, 'joined');
-  first.emit('join-game', 'arena');
+  first.emit('join-game', 'race');
   assert.equal((await firstJoined).side, 0);
 
   const secondJoined = once(second, 'joined');
   const firstRoomStatus = once(first, 'room-status');
-  second.emit('join-game', 'arena');
+  second.emit('join-game', 'race');
   assert.equal((await secondJoined).side, 1);
   assert.equal((await firstRoomStatus).players, 2);
 
@@ -56,7 +56,7 @@ test('online rooms allow exactly two players per game', async (t) => {
   assert.equal((await secondReadyStatus).phase, 'countdown');
 
   const rejected = once(third, 'room-full');
-  third.emit('join-game', 'arena');
+  third.emit('join-game', 'race');
   await rejected;
 
   const pongJoined = once(pongPlayer, 'joined');

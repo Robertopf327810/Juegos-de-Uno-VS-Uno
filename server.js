@@ -24,7 +24,7 @@ function createService() {
   const httpServer = http.createServer(app);
   const io = new Server(httpServer);
   const rooms = new Map([
-    ['arena', createRoom('arena')],
+    ['race', createRoom('race')],
     ['pong', createRoom('pong')]
   ]);
 
@@ -105,7 +105,7 @@ function createService() {
       if (!currentRoom || currentRoom.phase !== 'playing' || !input || typeof input !== 'object') return;
       const allowed = currentRoom.mode === 'pong'
         ? ['up', 'down']
-        : ['left', 'right', 'jump', 'attack'];
+        : ['jump', 'sprint'];
       const clean = {};
       for (const key of allowed) clean[key] = input[key] === true;
       currentRoom.inputs[side] = clean;

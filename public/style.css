@@ -36,20 +36,23 @@ button { font: inherit; }
 .game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 .game-card { overflow: hidden; border: 1px solid rgba(255,255,255,.11); border-radius: 16px; background: linear-gradient(150deg, rgba(28,32,49,.97), rgba(20,23,36,.97)); box-shadow: 0 20px 50px rgba(0,0,0,.2); }
 .card-art { height: 190px; position: relative; overflow: hidden; }
-.arena-art { background: radial-gradient(ellipse at 50% 100%, #514128 0, #27263a 46%, #191d30 78%); }
-.arena-art:after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(transparent, black); }
-.art-ground { position: absolute; height: 1px; bottom: 40px; left: 13%; right: 13%; background: linear-gradient(90deg, transparent, #eab951, transparent); box-shadow: 0 0 18px rgba(247,189,75,.4); }
+.race-art { background: linear-gradient(#a8d1cf, #e5dfc2 67%, #90ad72 68%, #755b43); }
+.race-sun { position: absolute; top: 43px; right: 18%; width: 36px; height: 36px; border-radius: 50%; background: #ffe3a1; box-shadow: 0 0 35px rgba(255,222,151,.55); }
+.race-hill { position: absolute; bottom: 54px; width: 115%; height: 90px; border-radius: 50% 50% 0 0; }
+.race-hill-back { left: -9%; background: #83aa91; }
+.race-hill-front { bottom: 45px; left: 33%; background: #618c75; }
+.race-track { position: absolute; bottom: 0; left: 0; width: 100%; height: 48px; background: repeating-linear-gradient(90deg, transparent 0 30px, rgba(239,219,168,.38) 30px 51px), #785d43; }
+.race-track:before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #a4bb76; }
+.race-obstacle { position: absolute; z-index: 1; bottom: 48px; left: 57%; width: 44px; height: 30px; border-radius: 70% 45% 10px 10px; background: #79816d; box-shadow: inset 7px 7px rgba(255,255,255,.14); }
+.race-runner { position: absolute; z-index: 2; bottom: 46px; width: 34px; height: 43px; border-radius: 16px 16px 10px 10px; background: #eb7950; }
+.race-runner:before { content: ""; position: absolute; top: -19px; left: 5px; width: 25px; height: 24px; border-radius: 46% 46% 43% 43%; background: inherit; }
+.race-runner i { position: absolute; z-index: 1; top: -9px; left: 12px; width: 3px; height: 4px; border-radius: 50%; background: #26333a; box-shadow: 8px 0 #26333a; }
+.race-runner b { position: absolute; top: -19px; left: 4px; width: 26px; height: 9px; border-radius: 13px 13px 3px 3px; background: #ffcb68; transform: rotate(-8deg); }
+.race-runner-one { left: 26%; transform: scale(.8); }
+.race-runner-two { left: 39%; bottom: 45px; background: #46a2ac; transform: scale(.68); }
+.race-runner-two b { background: #b7ead9; }
+.race-flag { position: absolute; z-index: 2; right: 17%; bottom: 46px; width: 19px; height: 64px; border-left: 2px solid #f6f1df; color: #34404a; font: 6px var(--mono); text-align: center; padding-top: 3px; background: repeating-conic-gradient(#f6f1df 0 25%, #374250 0 50%) 0 / 10px 10px no-repeat; }
 .art-label { position: absolute; top: 17px; left: 18px; z-index: 3; color: rgba(245,242,233,.55); font-size: 9px; }
-.spark { position: absolute; z-index: 1; color: #ffce68; text-shadow: 0 0 15px #f7bd4b; }
-.spark-one { top: 48px; left: 29%; font-size: 26px; }
-.spark-two { top: 65px; right: 28%; font-size: 18px; }
-.fighter { position: absolute; z-index: 2; bottom: 41px; width: 62px; height: 74px; border: 2px solid rgba(255,255,255,.54); border-radius: 24px 24px 14px 14px; box-shadow: 0 0 25px currentColor; }
-.fighter:before { content: ""; position: absolute; top: -25px; left: 10px; width: 39px; height: 33px; border: 2px solid rgba(255,255,255,.65); border-radius: 45% 45% 42% 42%; background: inherit; }
-.fighter i { position: absolute; z-index: 1; top: -13px; left: 17px; width: 6px; height: 6px; border-radius: 50%; background: #fff6cf; box-shadow: 12px 0 #fff6cf; }
-.fighter b, .fighter em { position: absolute; bottom: -7px; width: 12px; height: 19px; border-radius: 5px; background: inherit; border: 1px solid rgba(255,255,255,.5); }
-.fighter b { left: 8px; }.fighter em { right: 8px; }
-.fighter-fox { left: 29%; color: #fd9a57; background: #e78347; transform: scale(1.02) rotate(-5deg); }
-.fighter-bot { right: 29%; color: #75dbeb; background: #58aebb; transform: scale(.94) rotate(5deg); }
 .pong-art { background: radial-gradient(ellipse at center, #202f42, #191d30 70%); }
 .pong-score { position: absolute; top: 45px; left: 0; right: 0; z-index: 2; text-align: center; color: rgba(240,246,252,.74); font-family: var(--mono); font-size: 29px; letter-spacing: .09em; }
 .pong-score i { color: #65d8eb; font-size: 18px; font-style: normal; }

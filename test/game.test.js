@@ -24,18 +24,36 @@ test('ping-pong ends the match at five points', () => {
   assert.deepEqual(state.score, [5, 0]);
 });
 
-test('arena fight ends when a fighter lands three hits', () => {
-  const state = Game.create('arena');
-  state.fighters[0].x = 300;
-  state.fighters[0].facing = 1;
-  state.fighters[1].x = 350;
-  state.fighters[1].facing = -1;
-  let winner = -1;
+test('race jump clears an obstacle and sprint uses stamina', () => {
+  const state = Game.create('race');
+  state.runners[0].distance = 270;
 
-  for (let frame = 0; frame < 100 && winner < 0; frame += 1) {
-    winner = Game.step(state, [{ attack: true }, {}], 1 / 30);
+  for (let frame = 0; frame < 15; frame += 1) {
+    Game.step(state, [{ jump: frame === 0, sprint: true }, {}], 1 / 30);
   }
 
-  assert.equal(winner, 0);
-  assert.equal(state.fighters[1].hp, 0);
+  assert.equal(state.runners[0].collisions, 0);
+  assert.ok(state.runners[0].distance > state.runners[1].distance);
+  assert.ok(state.runners[0].stamina < 100);
+});
+
+test('hitting a race obstacle slows the runner', () => {
+  const state = Game.create('race');
+  state.runners[0].distance = 339;
+
+  Game.step(state, [{}, {}], 1 / 30);
+  const distanceAfterImpact = state.runners[0].distance;
+  Game.step(state, [{}, {}], 1 / 30);
+
+  assert.equal(state.runners[0].collisions, 1);
+  assert.ok(state.runners[0].stun > 0);
+  assert.ok(state.runners[0].distance - distanceAfterImpact < 164 / 30);
+});
+
+test('race ends when the first runner crosses the finish', () => {
+  const state = Game.create('race');
+  state.runners[0].distance = Game.RACE_FINISH - 5;
+
+  assert.equal(Game.step(state, [{ sprint: true }, {}], 1 / 30), 0);
+  assert.equal(state.winner, 0);
 });
