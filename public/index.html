@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101523">
+  <meta name="description" content="Elige tu duelo y juega en el mismo teclado o por Internet.">
+  <title>Duelo doble — Juegos 1 contra 1</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" id="brand-home" aria-label="Volver al menú">
+        <span class="brand-icon" aria-hidden="true">✦</span>
+        <span>DUEL<span class="brand-accent">O</span> DOBLE</span>
+      </a>
+      <div class="top-status"><span class="status-dot"></span> DOS JUGADORES · DOS RETOS</div>
+    </header>
+
+    <section id="menu-screen">
+      <div class="intro">
+        <p class="eyebrow">ESCOGE TU ARENA</p>
+        <h1>Un duelo.<br><span>Dos maneras de ganar.</span></h1>
+        <p class="intro-copy">Invita a alguien a tu teclado o reta a un amigo que esté en otro dispositivo.</p>
+      </div>
+
+      <div class="game-grid">
+        <article class="game-card arena-card">
+          <div class="card-art arena-art" aria-hidden="true">
+            <span class="spark spark-one">✦</span><span class="spark spark-two">✧</span>
+            <span class="fighter fighter-fox"><i></i><b></b><em></em></span>
+            <span class="fighter fighter-bot"><i></i><b></b><em></em></span>
+            <span class="art-ground"></span>
+            <span class="art-label">01 / ARENA</span>
+          </div>
+          <div class="card-content">
+            <div class="card-heading"><h2>Choque de Chispas</h2><span class="badge badge-gold">ACCIÓN</span></div>
+            <p>Salta, esquiva y conecta tres golpes con tu rival. ¿Quién se queda con la arena?</p>
+            <div class="controls"><span>J1: <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd></span><span>J2: <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>Enter</kbd></span></div>
+            <div class="card-actions">
+              <button class="button button-primary" data-game="arena" data-mode="local">Jugar en el mismo teclado <span>↗</span></button>
+              <button class="button button-secondary" data-game="arena" data-mode="online">Retar por Internet <span>↗</span></button>
+            </div>
+          </div>
+        </article>
+
+        <article class="game-card pong-card">
+          <div class="card-art pong-art" aria-hidden="true">
+            <span class="art-label">02 / CLÁSICO</span><span class="pong-score">04 <i>:</i> 03</span>
+            <span class="pong-paddle paddle-left"></span><span class="pong-paddle paddle-right"></span>
+            <span class="pong-ball"></span><span class="pong-dash"></span>
+            <span class="pong-glow"></span>
+          </div>
+          <div class="card-content">
+            <div class="card-heading"><h2>Ping-pong relámpago</h2><span class="badge badge-blue">REFLEJOS</span></div>
+            <p>Devuelve la pelota, cambia el ángulo y sé el primero en sumar cinco puntos.</p>
+            <div class="controls"><span>J1: <kbd>W</kbd><kbd>S</kbd></span><span>J2: <kbd>↑</kbd><kbd>↓</kbd></span></div>
+            <div class="card-actions">
+              <button class="button button-primary" data-game="pong" data-mode="local">Jugar en el mismo teclado <span>↗</span></button>
+              <button class="button button-secondary" data-game="pong" data-mode="online">Retar por Internet <span>↗</span></button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <p class="menu-note"><span>✦</span> Las partidas por Internet admiten exactamente dos jugadores por juego.</p>
+    </section>
+
+    <section id="game-screen" class="game-screen" hidden>
+      <div class="game-toolbar">
+        <button id="back-button" class="back-button" type="button">← Menú</button>
+        <div><p id="game-kicker" class="eyebrow">DUELO 1 CONTRA 1</p><h1 id="game-title">Choque de Chispas</h1></div>
+        <span id="connection-pill" class="connection-pill">LOCAL</span>
+      </div>
+      <div class="stage">
+        <canvas id="game-canvas" width="800" height="450" aria-label="Juego para dos jugadores"></canvas>
+        <div id="game-overlay" class="game-overlay">
+          <p id="overlay-eyebrow" class="eyebrow">LISTOS PARA JUGAR</p>
+          <h2 id="overlay-title">¿Quién gana?</h2>
+          <p id="overlay-copy"></p>
+          <button id="ready-button" class="button button-primary" type="button">¡Estoy listo!</button>
+        </div>
+      </div>
+      <div class="game-help">
+        <span id="player-label" class="player-label">JUGADOR 1 <i>VS</i> JUGADOR 2</span>
+        <span id="game-instructions"></span>
+      </div>
+    </section>
+
+    <footer><span>UN RETO COMPARTIDO <b>·</b> UNA SOLA CORONA</span><span>DUEL<span class="brand-accent">O</span> DOBLE &copy; 2026</span></footer>
+  </main>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
