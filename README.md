@@ -2,6 +2,7 @@
 
 Dos juegos 1 contra 1 con personajes originales, jugables desde el mismo teclado o en línea:
 
+- **Jugar en público:** <https://duelo-doble.onrender.com>
 - **Choque de Chispas:** dos robots saltan y se golpean; gana quien conecte tres golpes.
 - **Ping-pong relámpago:** devuelve la pelota y llega a cinco puntos.
 
