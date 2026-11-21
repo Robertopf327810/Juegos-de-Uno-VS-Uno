@@ -21,7 +21,7 @@ Abre <http://localhost:3000>. Para una partida local se comparten teclado: A/D/W
 
 ## Publicar en Render
 
-El archivo `render.yaml` define un servicio gratuito de Node.js que sirve la web y las partidas WebSocket en el mismo dominio. En Render, crea un **Blueprint** e importa este repositorio; Render detectará el archivo y publicará el servicio. Las instancias gratuitas pueden tardar unos segundos en despertar tras un periodo inactivo.
+El archivo `render.yaml` define un servicio gratuito de Node.js que sirve la web y las partidas WebSocket en el mismo dominio. Render puede suspender la instancia gratuita si no recibe tráfico; después de un periodo inactivo, la primera conexión puede tardar 50 segundos o más.
 
 ## Pruebas
 
