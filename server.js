@@ -105,7 +105,7 @@ function createService() {
       if (!currentRoom || currentRoom.phase !== 'playing' || !input || typeof input !== 'object') return;
       const allowed = currentRoom.mode === 'pong'
         ? ['up', 'down']
-        : ['jump', 'sprint'];
+        : ['left', 'right', 'jump', 'crouch', 'sprint'];
       const clean = {};
       for (const key of allowed) clean[key] = input[key] === true;
       currentRoom.inputs[side] = clean;

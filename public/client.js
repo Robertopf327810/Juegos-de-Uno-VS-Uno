@@ -13,7 +13,7 @@
   const readyButton = $('#ready-button');
   const socket = typeof window.io === 'function' ? window.io() : null;
   const keys = new Set();
-  const keyCodes = ['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown', 'Enter', 'ShiftLeft', 'ShiftRight'];
+  const keyCodes = ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'ShiftLeft', 'ShiftRight'];
 
   let mode = 'race';
   let playMode = 'local';
@@ -27,8 +27,8 @@
 
   const GAME_NAMES = { race: 'Carrera de plataformas', pong: 'Ping-pong relámpago' };
   const localInputs = [
-    { up: 'KeyW', down: 'KeyS', jump: 'KeyW', sprint: 'ShiftLeft' },
-    { up: 'ArrowUp', down: 'ArrowDown', jump: 'ArrowUp', sprint: 'Enter' }
+    { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', jump: 'KeyW', crouch: 'KeyS', sprint: 'ShiftLeft' },
+    { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', crouch: 'ArrowDown', sprint: 'Enter' }
   ];
 
   function setOverlay(title, copy, button, eyebrow) {
@@ -87,7 +87,7 @@
     $('#player-label').innerHTML = selectedMode === 'online' ? '<span id="player-slot">BUSCANDO PLAZA</span> <i>VS</i> RIVAL' : 'JUGADOR 1 <i>VS</i> JUGADOR 2';
     $('#game-instructions').textContent = game === 'pong'
       ? 'Devuelve la pelota y llega a 5 puntos.'
-      : 'Salta con W / ↑. Mantén Shift / Enter para acelerar; esquiva troncos y rocas.';
+      : 'Muévete con A/D o ←/→; salta con W/↑, agáchate con S/↓ y acelera con Shift/Enter.';
     menu.hidden = true;
     gameScreen.hidden = false;
     if (selectedMode === 'online') {
@@ -120,6 +120,7 @@
       left: keys.has(controls.left),
       right: keys.has(controls.right),
       jump: keys.has(controls.jump),
+      crouch: keys.has(controls.crouch),
       sprint: keys.has(controls.sprint)
     };
   }
@@ -186,17 +187,22 @@
   }
 
   function drawRunner(runner, side, groundY, animationTime) {
-    const x = 164;
+    const x = 164 + runner.lateral;
     const footY = groundY - (DuelGame.FLOOR - runner.y);
     const bob = runner.grounded ? Math.abs(Math.sin(animationTime * 0.014)) * 2 : 0;
     const bodyColor = side === 0 ? '#f07849' : '#48a6bb';
     const trimColor = side === 0 ? '#ffc86c' : '#a9ead8';
-    const headY = footY - 43 - bob;
+    const headY = footY - (runner.crouching ? 29 : 43) - bob;
     const stride = runner.grounded ? Math.sin(animationTime * 0.018) * 9 : 5;
 
     ctx.save();
     ctx.fillStyle = 'rgba(11,17,27,.24)';
     ctx.beginPath(); ctx.ellipse(x, groundY + 2, 27, 6, 0, 0, Math.PI * 2); ctx.fill();
+    if (runner.crouching) {
+      ctx.translate(x, footY);
+      ctx.scale(1, .7);
+      ctx.translate(-x, -footY);
+    }
 
     ctx.lineCap = 'round';
     ctx.lineWidth = 7;
@@ -239,7 +245,17 @@
   }
 
   function drawRaceObstacle(obstacle, x, groundY) {
-    if (obstacle.type === 'rock') {
+    if (obstacle.type === 'branch') {
+      ctx.fillStyle = '#72533a';
+      ctx.fillRect(x - obstacle.width / 2, groundY - obstacle.height - 22, 7, obstacle.height + 22);
+      ctx.fillRect(x + obstacle.width / 2 - 7, groundY - obstacle.height - 22, 7, obstacle.height + 22);
+      roundRect(x - obstacle.width / 2 - 4, groundY - obstacle.height - 26, obstacle.width + 8, 13, 6, '#52764d');
+      ctx.fillStyle = '#73945a';
+      ctx.beginPath();
+      ctx.arc(x - obstacle.width * .25, groundY - obstacle.height - 28, 12, 0, Math.PI * 2);
+      ctx.arc(x + obstacle.width * .2, groundY - obstacle.height - 29, 13, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (obstacle.type === 'rock') {
       ctx.fillStyle = '#75806b';
       ctx.beginPath();
       ctx.moveTo(x - obstacle.width / 2, groundY);
@@ -316,7 +332,7 @@
         if (obstacleX > 190 && obstacleX < 380) {
           ctx.fillStyle = side === 0 ? '#435f56' : '#715c44';
           ctx.font = '9px monospace'; ctx.textAlign = 'left';
-          ctx.fillText('¡SALTA!', 228, groundY - obstacle.height - 10);
+          ctx.fillText(obstacle.type === 'branch' ? '¡AGÁCHATE!' : '¡SALTA O MUÉVETE!', 228, groundY - obstacle.height - 10);
         }
       }
 

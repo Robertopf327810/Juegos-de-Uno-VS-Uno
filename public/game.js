@@ -14,9 +14,9 @@
   const RACE_OBSTACLES = [
     { distance: 340, type: 'rock', width: 40, height: 34 },
     { distance: 700, type: 'log', width: 56, height: 50 },
-    { distance: 1060, type: 'rock', width: 46, height: 40 },
+    { distance: 1060, type: 'branch', width: 74, height: 48 },
     { distance: 1440, type: 'log', width: 66, height: 55 },
-    { distance: 1830, type: 'rock', width: 50, height: 44 },
+    { distance: 1830, type: 'branch', width: 68, height: 44 },
     { distance: 2220, type: 'log', width: 58, height: 48 },
     { distance: 2580, type: 'rock', width: 44, height: 38 }
   ];
@@ -38,7 +38,7 @@
   }
 
   function createRunner() {
-    return { distance: 0, y: FLOOR, vy: 0, grounded: true, jumpHeld: false, stun: 0, stamina: 100, collisions: 0 };
+    return { distance: 0, lateral: 0, y: FLOOR, vy: 0, grounded: true, jumpHeld: false, crouching: false, stun: 0, stamina: 100, collisions: 0 };
   }
 
   function clamp(value, min, max) {
@@ -93,11 +93,15 @@
     for (let side = 0; side < 2; side += 1) {
       const racer = racers[side];
       const input = inputs[side] || {};
-      if (input.jump && !racer.jumpHeld && racer.grounded && racer.stun === 0) {
+      const direction = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+      racer.lateral = clamp(racer.lateral + direction * 300 * dt, -100, 100);
+
+      if (input.jump && !input.crouch && !racer.jumpHeld && racer.grounded && racer.stun === 0) {
         racer.vy = -620;
         racer.grounded = false;
       }
       racer.jumpHeld = !!input.jump;
+      racer.crouching = !!input.crouch && racer.grounded;
 
       racer.vy += 1680 * dt;
       racer.y += racer.vy * dt;
@@ -119,7 +123,11 @@
 
       const crossedObstacle = RACE_OBSTACLES.find((obstacle) =>
           previousDistance < obstacle.distance && racer.distance >= obstacle.distance);
-      if (crossedObstacle && (racer.grounded || racer.y > FLOOR - crossedObstacle.height - 30)) {
+      const changedLane = crossedObstacle && Math.abs(racer.lateral) >= crossedObstacle.width / 2 + 20;
+      const avoided = crossedObstacle && (changedLane || (crossedObstacle.type === 'branch'
+        ? racer.crouching
+        : !racer.grounded && racer.y <= FLOOR - crossedObstacle.height - 30));
+      if (crossedObstacle && !avoided) {
         racer.stun = 0.75;
         racer.collisions += 1;
       }

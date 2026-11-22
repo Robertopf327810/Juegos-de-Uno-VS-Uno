@@ -37,6 +37,33 @@ test('race jump clears an obstacle and sprint uses stamina', () => {
   assert.ok(state.runners[0].stamina < 100);
 });
 
+test('race runners can move sideways to dodge obstacles', () => {
+  const state = Game.create('race');
+  state.runners[0].distance = 300;
+
+  for (let frame = 0; frame < 4; frame += 1) {
+    Game.step(state, [{ left: true }, {}], 0.05);
+  }
+  for (let frame = 0; frame < 2; frame += 1) {
+    Game.step(state, [{}, {}], 0.05);
+  }
+
+  assert.ok(state.runners[0].lateral < -40);
+  assert.equal(state.runners[0].collisions, 0);
+});
+
+test('crouching avoids low branches', () => {
+  const state = Game.create('race');
+  state.runners[0].distance = 1059;
+  state.runners[1].distance = 1059;
+
+  Game.step(state, [{ crouch: true }, {}], 1 / 30);
+
+  assert.equal(state.runners[0].crouching, true);
+  assert.equal(state.runners[0].collisions, 0);
+  assert.equal(state.runners[1].collisions, 1);
+});
+
 test('hitting a race obstacle slows the runner', () => {
   const state = Game.create('race');
   state.runners[0].distance = 339;
